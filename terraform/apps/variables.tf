@@ -10,11 +10,15 @@ variable "kube_context" {
   default     = "kind-public-gists"
 }
 
+variable "argocd_namespace" {
+  description = "Namespace where Argo CD is installed and its Applications are managed."
+  type        = string
+}
+
 variable "argocd_applications" {
   description = "Argo CD Applications keyed by a stable identifier."
   type = map(object({
     name       = string
-    namespace  = string
     finalizers = list(string)
     project    = string
     gitops = object({

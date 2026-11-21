@@ -7,7 +7,7 @@ resource "kubernetes_manifest" "application" {
 
     metadata = {
       name       = each.value.name
-      namespace  = each.value.namespace
+      namespace  = var.argocd_namespace
       finalizers = each.value.finalizers
     }
 

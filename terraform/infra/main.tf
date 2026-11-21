@@ -1,3 +1,9 @@
+variable "argocd_namespace" {
+  description = "Namespace where Argo CD is installed."
+  type        = string
+  default     = "argocd"
+}
+
 locals {
   supported_environments = ["local", "nonprod", "production"]
   is_local_environment   = terraform.workspace == "local" && var.environment == "local"
@@ -8,7 +14,7 @@ resource "helm_release" "argocd" {
   repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argo-cd"
   version          = var.argocd_chart_version
-  namespace        = "argocd"
+  namespace        = var.argocd_namespace
   create_namespace = true
   timeout          = 900
   wait             = true

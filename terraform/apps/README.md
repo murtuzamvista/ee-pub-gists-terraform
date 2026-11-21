@@ -9,7 +9,9 @@ Environment-specific inputs live under
 map keyed by a stable identifier; Terraform creates one Argo CD Application
 per map entry. Each entry groups the repository, revision, and overlay path
 under `gitops`, and the target cluster and namespace under `destination`. The
-Kubernetes provider context identifies the cluster hosting Argo CD;
+`argocd_namespace` input sets the namespace where those Application resources
+are created and should match the Argo CD installation namespace. The Kubernetes
+provider context identifies the cluster hosting Argo CD;
 `destination.server` identifies where Argo CD deploys workloads.
 
 ## Apply order
