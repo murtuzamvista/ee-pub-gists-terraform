@@ -22,19 +22,13 @@ That separation is intentional: Terraform must discover the Argo CD
 1. Install Argo CD with the parent Terraform root and wait for its Helm release
    to complete.
 2. Ensure the dev overlay in the GitOps repository has a published image tag.
-3. Initialize this root and use its dedicated `dev` workspace:
+3. Plan with the environment-specific values and review before applying. The
+   wrapper initializes Terraform and selects or creates the matching `dev`
+   workspace:
 
    ```sh
-   terraform -chdir=argocd-applications init
-   terraform -chdir=argocd-applications workspace select dev \
-     || terraform -chdir=argocd-applications workspace new dev
-   ```
-
-4. Plan with the environment-specific values and review before applying:
-
-   ```sh
-   terraform -chdir=argocd-applications plan -var-file=dev.tfvars.json
-   terraform -chdir=argocd-applications apply -var-file=dev.tfvars.json
+   python3 tf.py --operation=plan --env=dev --project=argocd-applications
+   python3 tf.py --operation=apply --env=dev --project=argocd-applications
    ```
 
 Terraform connects using the configured kubeconfig and context. The Application

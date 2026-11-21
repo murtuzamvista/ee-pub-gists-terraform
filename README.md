@@ -7,15 +7,28 @@ configuration and deployments are not implemented yet.
 
 ## Deploy locally
 
-Run these commands from this directory. Terraform must be installed, and the
-`kind-public-gists` cluster must be running and present in `~/.kube/config`.
+Terraform and Python 3 must be installed, and the `kind-public-gists` cluster
+must be running and present in `~/.kube/config`.
 
 ```sh
-terraform init
-terraform workspace select local || terraform workspace new local
-terraform plan -var-file=local.tfvars.json
-terraform apply -var-file=local.tfvars.json
+python3 tf.py --operation=plan --env=local --project=root
+python3 tf.py --operation=apply --env=local --project=root
 ```
+
+The wrapper supports `validate`, `plan`, and `apply`. It initializes Terraform,
+selects or creates the environment workspace for plan/apply, and supplies
+`<env>.tfvars.json` from the chosen project. Validation initializes without a
+backend and does not select a workspace. Apply requires interactive approval by
+default.
+
+For CI/CD, run `plan` and then `apply` only after the pipeline's approval gate.
+The apply operation can be made non-interactive explicitly:
+
+```sh
+python3 tf.py --operation=apply --env=local --project=root --auto-approve
+```
+
+Use `--project=argocd-applications` for the Argo CD Application Terraform root.
 
 The Helm release creates the `argocd` namespace. The server stays on a
 `ClusterIP`, so it is not exposed outside the cluster. For local access, run:
@@ -39,11 +52,8 @@ environment-specific values files. Apply the Argo CD installation first, then
 select the corresponding workspace and review/apply the Application:
 
 ```sh
-terraform -chdir=argocd-applications init
-terraform -chdir=argocd-applications workspace select dev \
-  || terraform -chdir=argocd-applications workspace new dev
-terraform -chdir=argocd-applications plan -var-file=dev.tfvars.json
-terraform -chdir=argocd-applications apply -var-file=dev.tfvars.json
+python3 tf.py --operation=plan --env=dev --project=argocd-applications
+python3 tf.py --operation=apply --env=dev --project=argocd-applications
 ```
 
 The Application root uses its own Terraform state and manages the dev
