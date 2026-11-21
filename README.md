@@ -1,88 +1,64 @@
-# Argo CD Terraform deployment
+# Terraform infrastructure and Argo CD applications
 
-This Terraform root installs Argo CD with the HashiCorp Helm provider. The
-`local` environment is configured for the `kind-public-gists` context.
-`non-prod` and `prod` have placeholder variable files only; EKS provider
-configuration and deployments are not implemented yet.
+This repository separates reusable Terraform configuration from environment
+inputs:
 
-## Deploy locally
-
-Terraform and Python 3 must be installed, and the `kind-public-gists` cluster
-must be running and present in `~/.kube/config`.
-
-```sh
-python3 tf.py --operation=plan --env=local --project=root
-python3 tf.py --operation=apply --env=local --project=root
+```text
+terraform/
+  infra/
+  argocd-applications/
+configs/
+  infra/
+    local/
+    nonprod/
+    production/
+  argocd-applications/
+    dev/
+    qa/
+    prod/
+scripts/
+  tf.py
 ```
 
-The wrapper supports `validate`, `plan`, and `apply`. It initializes Terraform,
-selects or creates the environment workspace for plan/apply, and supplies
-`<env>.tfvars.json` from the chosen project. Validation initializes without a
-backend and does not select a workspace. Apply requires interactive approval by
-default.
+- `terraform/infra` manages cluster-level infrastructure, beginning with Argo
+  CD installation.
+- `terraform/argocd-applications` manages Argo CD `Application` resources.
+- `configs/<project>/<environment>` contains one or more JSON tfvars files for
+  the matching project and environment. The wrapper passes all files in
+  lexical order.
+- `scripts/tf.py` runs Terraform `validate`, `plan`, or `apply` from the correct root
+  with the selected environment's config.
 
-For CI/CD, run `plan` and then `apply` only after the pipeline's approval gate.
-The apply operation can be made non-interactive explicitly:
+Workload manifests and Kustomize overlays remain in the GitOps repository;
+Terraform manages the infrastructure and Argo CD pointers only.
 
-```sh
-python3 tf.py --operation=apply --env=local --project=root --auto-approve
-```
+## Run Terraform
 
-Use `--project=argocd-applications` for the Argo CD Application Terraform root.
-
-The Helm release creates the `argocd` namespace. The server stays on a
-`ClusterIP`, so it is not exposed outside the cluster. For local access, run:
+From the repository root:
 
 ```sh
-kubectl --context kind-public-gists -n argocd port-forward svc/argocd-server 8080:80
+python3 scripts/tf.py --operation=validate --env=local --project=infra
+python3 scripts/tf.py --operation=plan --env=local --project=infra
+python3 scripts/tf.py --operation=apply --env=local --project=infra
 ```
 
-Open `http://localhost:8080`. Retrieve the initial admin password with:
+For the Argo CD dev Application:
 
 ```sh
-kubectl --context kind-public-gists -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath='{.data.password}' | base64 --decode
+python3 scripts/tf.py --operation=validate --env=dev --project=argocd-applications
+python3 scripts/tf.py --operation=plan --env=dev --project=argocd-applications
+python3 scripts/tf.py --operation=apply --env=dev --project=argocd-applications
 ```
 
-## Manage Argo CD Applications
+`plan` and `apply` select or create a Terraform workspace matching `--env`.
+`apply` requires confirmation unless `--auto-approve` is explicitly supplied,
+for example after a CI/CD approval gate. Validate does not select a workspace.
 
-Argo CD Applications are managed as Terraform resources in the separate
-`argocd-applications/` root. Application-specific settings are provided through
-environment-specific values files. Apply the Argo CD installation first, then
-select the corresponding workspace and review/apply the Application:
+Install Argo CD through the `infra` project before planning Argo CD
+Applications, since their Kubernetes CRD must exist. The local infra
+configuration targets the `kind-public-gists` context. Non-production and
+production infra configs remain placeholders until their cluster credentials
+and provider setup are implemented.
 
-```sh
-python3 tf.py --operation=plan --env=dev --project=argocd-applications
-python3 tf.py --operation=apply --env=dev --project=argocd-applications
-```
-
-The Application root uses its own Terraform state and manages the dev
-Application only. It requires Argo CD's Application CRD to exist before
-planning. For each additional environment, add a matching values file and use
-a separate workspace. Workload manifests and overlays remain in the GitOps
-repository. Review `argocd-applications/README.md` before applying, especially the
-destroy behavior.
-
-## Environment workspaces
-
-Create the EKS workspaces when needed, but do not apply them until their
-cluster contexts and EKS connectivity are configured:
-
-```sh
-terraform workspace new non-prod
-terraform workspace new prod
-```
-
-Select the matching workspace and variable file together for every plan/apply:
-
-```sh
-terraform workspace select non-prod
-terraform plan -var-file=non-prod.tfvars.json
-
-terraform workspace select prod
-terraform plan -var-file=prod.tfvars.json
-```
-
-The non-prod and prod plans intentionally fail a precondition for now. Replace
-their placeholder context values and add the EKS-specific provider
-authentication/configuration before implementing those environments.
+Local Terraform state is kept per project root and workspace. Do not commit
+Terraform state or credentials.

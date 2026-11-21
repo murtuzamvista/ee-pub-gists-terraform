@@ -1,5 +1,5 @@
 locals {
-  supported_environments = ["local", "non-prod", "prod"]
+  supported_environments = ["local", "nonprod", "production"]
   is_local_environment   = terraform.workspace == "local" && var.environment == "local"
 }
 
@@ -31,7 +31,7 @@ resource "helm_release" "argocd" {
   lifecycle {
     precondition {
       condition     = contains(local.supported_environments, terraform.workspace)
-      error_message = "Use one of the local, non-prod, or prod Terraform workspaces."
+      error_message = "Use one of the local, nonprod, or production Terraform workspaces."
     }
 
     precondition {
