@@ -5,7 +5,7 @@ manifests, Kustomize overlays, and image tags remain in the GitOps repository;
 Terraform manages only the Argo CD pointers to those paths.
 
 Environment-specific inputs live under
-`configs/argocd-applications/<environment>/`. Applications are supplied as a
+`configs/apps/<environment>/`. Applications are supplied as a
 map keyed by a stable identifier; Terraform creates one Argo CD Application
 per map entry. Each entry groups the repository, revision, and overlay path
 under `gitops`, and the target cluster and namespace under `destination`. The
@@ -26,8 +26,8 @@ That separation is intentional: Terraform must discover the Argo CD
    creates the matching `dev` workspace:
 
    ```sh
-   python3 scripts/tf.py --operation=plan --env=dev --project=argocd-applications
-   python3 scripts/tf.py --operation=apply --env=dev --project=argocd-applications
+   python3 scripts/tf.py --operation=plan --env=dev --project=apps
+   python3 scripts/tf.py --operation=apply --env=dev --project=apps
    ```
 
 Terraform connects using the configured kubeconfig and context. The Application

@@ -12,7 +12,7 @@ from pathlib import Path
 
 OPERATIONS = ("validate", "plan", "apply")
 ENVIRONMENT_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*\Z")
-PROJECTS = ("infra", "argocd-applications")
+PROJECTS = ("infra", "apps")
 
 
 class TF:
@@ -21,7 +21,9 @@ class TF:
         self.project = project
         self.environment = environment
         if not ENVIRONMENT_PATTERN.fullmatch(environment):
-            raise ValueError("Environment may contain only letters, numbers, hyphens, and underscores.")
+            raise ValueError(
+                "Environment may contain only letters, numbers, hyphens, and underscores."
+            )
         if project not in PROJECTS:
             raise ValueError(f"Project must be one of: {', '.join(PROJECTS)}")
         self.terraform_directory = self.repository_root / "terraform" / project
@@ -31,7 +33,9 @@ class TF:
         ):
             raise ValueError(f"Terraform project not found: {self.terraform_directory}")
         if not self.config_directory.is_dir():
-            raise ValueError(f"Environment config directory not found: {self.config_directory}")
+            raise ValueError(
+                f"Environment config directory not found: {self.config_directory}"
+            )
         self.variable_files = self.find_variable_files()
 
     def find_variable_files(self) -> list[Path]:
@@ -45,7 +49,9 @@ class TF:
         if operation not in OPERATIONS:
             raise ValueError(f"Unsupported operation: {operation}")
         if auto_approve and operation != "apply":
-            raise ValueError("--auto-approve can only be used with the apply operation.")
+            raise ValueError(
+                "--auto-approve can only be used with the apply operation."
+            )
 
         print("=== Terraform deployment ===")
         print(f"Project: {self.project}")
@@ -103,7 +109,9 @@ def parse_arguments() -> argparse.Namespace:
         description="Run Terraform validate, plan, or apply for a project and environment."
     )
     parser.add_argument("--operation", choices=OPERATIONS, required=True)
-    parser.add_argument("--env", required=True, help="Workspace and tfvars environment name.")
+    parser.add_argument(
+        "--env", required=True, help="Workspace and tfvars environment name."
+    )
     parser.add_argument(
         "--project",
         required=True,

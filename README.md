@@ -6,13 +6,13 @@ inputs:
 ```text
 terraform/
   infra/
-  argocd-applications/
+  apps/
 configs/
   infra/
     local/
     nonprod/
     production/
-  argocd-applications/
+  apps/
     dev/
     qa/
     prod/
@@ -22,7 +22,7 @@ scripts/
 
 - `terraform/infra` manages cluster-level infrastructure, beginning with Argo
   CD installation.
-- `terraform/argocd-applications` manages Argo CD `Application` resources.
+- `terraform/apps` manages Argo CD `Application` resources.
 - `configs/<project>/<environment>` contains one or more JSON tfvars files for
   the matching project and environment. The wrapper passes all files in
   lexical order.
@@ -45,9 +45,9 @@ python3 scripts/tf.py --operation=apply --env=local --project=infra
 For the Argo CD dev Application:
 
 ```sh
-python3 scripts/tf.py --operation=validate --env=dev --project=argocd-applications
-python3 scripts/tf.py --operation=plan --env=dev --project=argocd-applications
-python3 scripts/tf.py --operation=apply --env=dev --project=argocd-applications
+python3 scripts/tf.py --operation=validate --env=dev --project=apps
+python3 scripts/tf.py --operation=plan --env=dev --project=apps
+python3 scripts/tf.py --operation=apply --env=dev --project=apps
 ```
 
 `plan` and `apply` select or create a Terraform workspace matching `--env`.
@@ -62,3 +62,16 @@ and provider setup are implemented.
 
 Local Terraform state is kept per project root and workspace. Do not commit
 Terraform state or credentials.
+
+## Pre-commit checks
+
+Install the Git hook once per clone and run all checks manually with:
+
+```sh
+pre-commit install
+pre-commit run --all-files
+```
+
+The hooks check JSON and whitespace, lint and format Python, format Terraform,
+and validate both Terraform roots. Terraform validation initializes with the
+backend disabled; it does not apply changes to a cluster.
