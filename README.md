@@ -75,3 +75,20 @@ pre-commit run --all-files
 The hooks check JSON and whitespace, lint and format Python, format Terraform,
 and validate both Terraform roots. Terraform validation initializes with the
 backend disabled; it does not apply changes to a cluster.
+
+## Terraform CI
+
+The GitHub Actions workflow runs on pull requests to `main` and pushes to
+`main`. It uses a self-hosted runner, runs the pre-commit checks, and invokes
+`scripts/tf.py --operation=validate` for every configured project and
+environment. Register and keep the laptop runner online for these checks.
+The runner needs Python, Git, and network access to install the pre-commit
+hooks; Terraform is installed by the workflow.
+
+This workflow only performs formatting, linting, and Terraform validation. It
+does not run `plan` or `apply`, and does not change Terraform state or cluster
+resources. Because self-hosted runners execute repository code on your laptop,
+the job is skipped for pull requests from forks; only run it for trusted
+repository changes. Adding plan/apply automation will require a persistent
+remote state backend, cluster credentials on the runner, and an approval
+strategy.
